@@ -13,6 +13,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ShoppingCart
@@ -115,9 +116,11 @@ class MainActivity : ComponentActivity() {
 
 // Barra superior com lupa, Cardápio e Carrinho
 // Barra superior com ícone de carrinho que mostra a quantidade de pizzas no carrinho
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BarraSuperior(
-    onSearchClick: () -> Unit,
+    searchText: String,
+    onSearchTextChanged: (String) -> Unit,
     onCartClick: () -> Unit,
     quantidadeNoCarrinho: Int
 ) {
@@ -129,17 +132,28 @@ fun BarraSuperior(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        IconButton(onClick = onSearchClick) {
-            Icon(Icons.Filled.Search, contentDescription = "Pesquisar", tint = Color.White)
-        }
-
-        Box(
+        TextField(
+            value = searchText,
+            onValueChange = onSearchTextChanged,
+            placeholder = {
+                Text("Pesquisar", color = Color.Gray.copy(alpha = 0.6f)) // Use uma cor padrão para o placeholder
+            },
             modifier = Modifier
                 .weight(1f)
-                .wrapContentWidth(Alignment.CenterHorizontally)
-        ) {
-            Text(text = "Cardápio", fontSize = 20.sp, color = Color.White)
-        }
+                .padding(horizontal = 16.dp)
+                .background(Color.White, shape = RoundedCornerShape(8.dp)),
+            colors = TextFieldDefaults.textFieldColors(
+                containerColor = Color.White,  // Cor de fundo do TextField
+                focusedIndicatorColor = Color.Transparent, // Remove a linha ao focar
+                unfocusedIndicatorColor = Color.Transparent, // Remove a linha ao não focar
+                cursorColor = Color.Black // Define a cor do cursor
+                // Remover placeholderColor, pois não existe mais
+            )
+        )
+
+
+
+
 
         // Exibe o número de pizzas no carrinho
         IconButton(onClick = onCartClick) {
@@ -166,6 +180,7 @@ fun BarraSuperior(
         }
     }
 }
+
 
 
 
@@ -348,16 +363,28 @@ fun PreviewTelaLogin() {
 // Tela Principal com as alterações solicitadas
 @Composable
 fun TelaPrincipal(navController: NavController, carrinho: MutableList<Pedido>) {
+    var searchText by remember { mutableStateOf("") }
+
+    // Lista de sabores disponíveis
+    val sabores = listOf(
+        "Pizza de Calabresa com Cebola",
+        "Pizza de Frango com Catupiry",
+        "Pizza Quatro Queijos",
+        "Pizza Romana"
+    )
+
+    // Lista filtrada de sabores com base no termo de busca
+    val saboresFiltrados = sabores.filter {
+        it.contains(searchText, ignoreCase = true)
+    }
 
     val backgroundImage = painterResource(id = R.drawable.madeira)
 
     // Calcula a quantidade total de pizzas no carrinho
     val quantidadeNoCarrinho = carrinho.sumOf { it.quantidade }
 
-
     Box(
-        modifier = Modifier
-            .fillMaxSize()
+        modifier = Modifier.fillMaxSize()
     ) {
         Image(
             painter = backgroundImage,
@@ -378,30 +405,21 @@ fun TelaPrincipal(navController: NavController, carrinho: MutableList<Pedido>) {
                 .padding(0.dp)
         ) {
             BarraSuperior(
-                onSearchClick = {
-                    // Lógica de busca
-                },
+                searchText = searchText,
+                onSearchTextChanged = { searchText = it },
                 onCartClick = {
                     navController.navigate("telaCarrinho")
                 },
-                quantidadeNoCarrinho = quantidadeNoCarrinho // Passa a quantidade
+                quantidadeNoCarrinho = quantidadeNoCarrinho
             )
-
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Exibe a lista de sabores
-            val sabores = listOf(
-                R.drawable.sabor1,
-                R.drawable.sabor2,
-                R.drawable.sabor3,
-                R.drawable.sabor4
-            )
-
+            // Exibe a lista filtrada de sabores
             Column {
-                sabores.forEachIndexed { index, sabor ->
+                saboresFiltrados.forEachIndexed { index, sabor ->
                     Image(
-                        painter = painterResource(id = sabor),
+                        painter = painterResource(id = R.drawable.sabor1 + index),
                         contentDescription = "Sabor de Pizza",
                         modifier = Modifier
                             .fillMaxWidth()
@@ -416,6 +434,7 @@ fun TelaPrincipal(navController: NavController, carrinho: MutableList<Pedido>) {
         }
     }
 }
+
 
 
 
